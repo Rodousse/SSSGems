@@ -13,6 +13,10 @@ option (USE32bit 0)
 set( GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE )
 set( GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE )
 set( GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE )
+set(RESOURCE_PATH ${PROJECT_SOURCE_DIR}/resources)
+
+configure_file(cmake/defines.h.in include/defines.h @ONLY)
+include_directories(${CMAKE_BINARY_DIR}/include/)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
 
@@ -34,9 +38,23 @@ endif()
 
 set(SOURCES
     src/main.cpp
-    shaders/vertex.vert
-    shaders/fragment.frag
+    src/shader/ShaderUtils.cpp
+    resources/shaders/vertex.vert
+    resources/shaders/fragment.frag
     )
-add_executable(SSSGems ${SOURCES})
-target_include_directories(SSSGems PRIVATE ${GLEW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLM_INCLUDE_DIR})
-target_link_libraries(SSSGems glfw ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES})
+
+set(HEADERS
+    include/shader/ShaderUtils.h)
+
+add_executable(SSSGems ${SOURCES} ${HEADERS})
+
+target_include_directories(SSSGems PRIVATE
+    ${PROJECT_SOURCE_DIR}/include/
+    ${GLEW_INCLUDE_DIRS}
+    ${OPENGL_INCLUDE_DIRS}
+    ${GLM_INCLUDE_DIR})
+
+target_link_libraries(SSSGems
+    glfw
+    ${OPENGL_LIBRARIES}
+    ${GLEW_LIBRARIES})

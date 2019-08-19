@@ -1,0 +1,2 @@
+#define RESOURCE_PATH "@RESOURCE_PATH@"
+#define PI 3.14159265
