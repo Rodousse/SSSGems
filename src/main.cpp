@@ -1,34 +1,14 @@
 #define GLEW_STATIC
+#include <array>
+#include <chrono>
 #include <defines.h>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include "shader/ShaderUtils.h"
-#include <chrono>
-#include <array>
-
-struct Vertex
-{
-    glm::vec3 position;
-    glm::vec3 color;
-};
-
-
-constexpr glm::vec3 points[3] =
-{
-    {0.0f,  0.5f,  0.0f},
-    {0.5f, -0.5f,  0.0f},
-    {-0.5f, -0.5f,  0.0f}
-};
-
-constexpr std::array<Vertex, 3> vertices
-{
-    Vertex{glm::vec3(0.0f,  0.5f,  0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-    Vertex{glm::vec3(0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-    Vertex{glm::vec3(-0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 0.0f, 1.0f)}
-};
+#include "utils/ObjLoader.h"
+#include "utils/ShaderUtils.h"
 
 int main()
 {
@@ -60,10 +40,18 @@ int main()
     std::cout << "Renderer: " <<  renderer << std::endl;
     std::cout << "OpenGL version supported " <<  version << std::endl;
 
+    Mesh mesh;
+
+    if(!loader::load(std::string(RESOURCE_PATH) + "/models/dragon.obj", mesh))
+    {
+        throw std::runtime_error("Can't load file : " + std::string(RESOURCE_PATH) + "/models/dragon.obj");
+    }
+
     GLuint vbo = 0;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(),
+                 GL_STATIC_DRAW);
 
     GLuint vao = 0;
     glGenVertexArrays(1, &vao);
@@ -75,7 +63,13 @@ int main()
                           reinterpret_cast<void*>(offsetof(Vertex, position)));
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          reinterpret_cast<void*>(offsetof(Vertex, color)));
+                          reinterpret_cast<void*>(offsetof(Vertex, normal)));
+
+    GLuint ebo = 0;
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(),
+                 GL_STATIC_DRAW);
 
     auto vertex_shader = shader::loadShader(std::string(RESOURCE_PATH) + "/shaders/vertex.vert");
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
@@ -120,18 +114,19 @@ int main()
         auto delay = std::chrono::duration_cast<std::chrono::duration<float>>
                      (std::chrono::high_resolution_clock::now() -
                       startTime);
-        view = glm::lookAt(glm::vec3(2.0 * std::cos(delay.count() * PI),
+        float angleRotation = delay.count() * PI / 4.0f;
+        view = glm::lookAt(glm::vec3(2.0 * std::cos(angleRotation),
                                      0.0,
-                                     2.0 * std::sin(delay.count() * PI)),
+                                     2.0 * std::sin(angleRotation)),
                            glm::vec3(0.0),
                            glm::vec3(0.0, 1.0, 0.0));
 
         mvp = projection * view * model;
 
 
-        glBindVertexArray(vao);
-        // draw points 0-3 from the currently bound VAO with current in-use shader
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+        glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
         // update other events like input handling
         glfwPollEvents();
         // put the stuff we've been drawing onto the display

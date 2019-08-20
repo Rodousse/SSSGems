@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(OpenGL REQUIRED)
 find_package(glm REQUIRED)
+find_package(TinyObjLoader REQUIRED)
 
 option (USE32bit 0)
 
@@ -38,13 +39,16 @@ endif()
 
 set(SOURCES
     src/main.cpp
-    src/shader/ShaderUtils.cpp
+    src/utils/ShaderUtils.cpp
+    src/utils/ObjLoader.cpp
     resources/shaders/vertex.vert
     resources/shaders/fragment.frag
     )
 
 set(HEADERS
-    include/shader/ShaderUtils.h)
+    include/Mesh.h
+    include/utils/ShaderUtils.h
+    include/utils/ObjLoader.h)
 
 add_executable(SSSGems ${SOURCES} ${HEADERS})
 
@@ -52,7 +56,8 @@ target_include_directories(SSSGems PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
     ${GLEW_INCLUDE_DIRS}
     ${OPENGL_INCLUDE_DIRS}
-    ${GLM_INCLUDE_DIR})
+    ${GLM_INCLUDE_DIR}
+    ${TINYOBJLOADER_INCLUDE_DIR})
 
 target_link_libraries(SSSGems
     glfw
