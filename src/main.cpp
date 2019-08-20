@@ -25,9 +25,9 @@ constexpr glm::vec3 points[3] =
 
 constexpr std::array<Vertex, 3> vertices =
 {
-    {   {0.0f,  0.5f,  0.0f}, {1.0f, 0.0f, 0.0f}},
-    {glm::vec3(0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-    {glm::vec3(-0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 0.0f, 1.0f)}
+    Vertex{glm::vec3(0.0f,  0.5f,  0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+    Vertex{glm::vec3(0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+    Vertex{glm::vec3(-0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 0.0f, 1.0f)}
 };
 
 int main()
@@ -48,8 +48,6 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
-
-//    glewExperimental = GL_TRUE;
 
     if(glewInit() != GLEW_OK)
     {
