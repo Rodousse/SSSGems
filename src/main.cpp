@@ -23,7 +23,7 @@ constexpr glm::vec3 points[3] =
     {-0.5f, -0.5f,  0.0f}
 };
 
-constexpr std::array<Vertex, 3> vertices =
+constexpr std::array<Vertex, 3> vertices
 {
     Vertex{glm::vec3(0.0f,  0.5f,  0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
     Vertex{glm::vec3(0.5f, -0.5f,  0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
@@ -63,14 +63,19 @@ int main()
     GLuint vbo = 0;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices, GL_STATIC_DRAW);
 
     GLuint vao = 0;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          reinterpret_cast<void*>(offsetof(Vertex, position)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                          reinterpret_cast<void*>(offsetof(Vertex, color)));
 
     auto vertex_shader = shader::loadShader(std::string(RESOURCE_PATH) + "/shaders/vertex.vert");
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
