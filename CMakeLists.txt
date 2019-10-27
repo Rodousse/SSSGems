@@ -43,6 +43,8 @@ set(SOURCES
     src/utils/ObjLoader.cpp
     resources/shaders/vertex.vert
     resources/shaders/fragment.frag
+    resources/shaders/vertexDepth.vert
+    resources/shaders/fragmentDepth.frag
     )
 
 set(HEADERS
