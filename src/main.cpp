@@ -10,7 +10,7 @@
 #include "utils/ObjLoader.h"
 #include "utils/ShaderUtils.h"
 
-#define SHADOW_RES 2048
+#define SHADOW_RES 4096
 
 
 struct UniformData
@@ -78,7 +78,7 @@ int main()
 
     if(!loader::load(std::string(RESOURCE_PATH) + "/models/bunny.obj", mesh))
     {
-        throw std::runtime_error("Can't load file : " + std::string(RESOURCE_PATH) + "/models/dragon.obj");
+        throw std::runtime_error("Can't load file : " + std::string(RESOURCE_PATH) + "/models/bunny.obj");
     }
 
     GLuint vbo = 0;
@@ -159,8 +159,8 @@ int main()
     glBindTexture(GL_TEXTURE_2D, texDepth);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RES, SHADOW_RES, 0, GL_RGBA, GL_FLOAT,
                  nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
