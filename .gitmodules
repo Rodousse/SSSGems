@@ -7,3 +7,6 @@
 [submodule "third_party/tinyobjloader"]
 	path = third_party/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader.git
+[submodule "third_party/glew-cmake"]
+	path = third_party/glew-cmake
+	url = https://github.com/Perlmint/glew-cmake.git
