@@ -16,10 +16,10 @@ std::vector<char> loadShader(const std::string& path)
         throw std::runtime_error("[SHADER UTILS] : Can't open shader : " + path);
     }
 
-    size_t fileSize = file.tellg();
+    const std::streamsize fileSize = file.tellg();
 
     std::vector<char> shaderData;
-    shaderData.resize(fileSize);
+    shaderData.resize(static_cast<std::size_t>(fileSize));
 
     file.seekg(0);
     file.read(shaderData.data(), fileSize);

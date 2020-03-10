@@ -2,11 +2,10 @@
 #include <algorithm>
 #include <unordered_map>
 #include <glm/vec3.hpp>
-
-#define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-
+namespace
+{
 template <class Hasher, class Hashed>
 inline void hash_combine(std::size_t& seed, const Hashed& v)
 {
@@ -17,9 +16,9 @@ inline void hash_combine(std::size_t& seed, const Hashed& v)
 
 struct VertexIndicesHasher
 {
-    size_t operator()(const tinyobj::index_t& hashed)const
+    std::size_t operator()(const tinyobj::index_t& hashed)const
     {
-        size_t seed = 0xab12f56c;
+        std::size_t seed = 0xab12f56c;
         hash_combine<std::hash<int>, int>(seed, hashed.vertex_index);
         hash_combine<std::hash<int>, int>(seed, hashed.normal_index);
         return seed;
@@ -33,18 +32,19 @@ struct VertexIndicesEquals
         return a.vertex_index == b.vertex_index && a.normal_index == b.normal_index;
     }
 };
+}
 
 namespace loader
 {
 bool load(const std::string& path, Mesh& scene)
 {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
+    tinyobj::attrib_t attrib{};
+    std::vector<tinyobj::shape_t> shapes{};
+    std::vector<tinyobj::material_t> materials{};
 
     std::string err;
     std::string warn;
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str());
+    const bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str());
 
     if(!ret)
     {
@@ -59,33 +59,33 @@ bool load(const std::string& path, Mesh& scene)
     // Loop over shapes
     for(tinyobj::shape_t shape : shapes)
     {
-        size_t index_offset = 0;
+        std::size_t index_offset = 0;
 
 
-        for(size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
+        for(std::size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
         {
             int fv = shape.mesh.num_face_vertices[f];
 
             for(int v = 0; v < fv; v++)
             {
-                tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+                const tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
 
                 if(attributeIndices.count(idx) == 0)
                 {
 
-                    size_t indexTemp;
+                    std::size_t indexTemp;
                     Vertex newVertex{};
 
                     if(idx.vertex_index > -1)
                     {
-                        indexTemp = idx.vertex_index * 3;
+                        indexTemp = static_cast<std::size_t>(idx.vertex_index) * 3;
                         newVertex.position = glm::vec3(attrib.vertices[indexTemp], attrib.vertices[indexTemp + 1],
                                                        attrib.vertices[indexTemp + 2]);
                     }
 
                     if(idx.normal_index > -1)
                     {
-                        indexTemp = idx.normal_index * 3;
+                        indexTemp = static_cast<std::size_t>(idx.normal_index) * 3;
                         newVertex.normal = glm::vec3(attrib.normals[indexTemp], attrib.normals[indexTemp + 1],
                                                      attrib.normals[indexTemp + 2]);
                     }
@@ -98,7 +98,7 @@ bool load(const std::string& path, Mesh& scene)
                 scene.indices.push_back(attributeIndices[idx]);
             }
 
-            index_offset += fv;
+            index_offset += static_cast<std::size_t>(fv);
         }
 
     }

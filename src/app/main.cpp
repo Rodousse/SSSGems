@@ -1,4 +1,3 @@
-#define GLEW_STATIC
 #include <array>
 #include <chrono>
 #include <defines.h>
@@ -81,17 +80,24 @@ int main()
         throw std::runtime_error("Can't load file : " + std::string(RESOURCE_PATH) + "/models/bunny.obj");
     }
 
-    GLuint vbo = 0;
+    GLuint vbo{};
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(),
                  GL_STATIC_DRAW);
 
-    GLuint vao = 0;
+    GLuint ebo{};
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(),
+                 GL_STATIC_DRAW);
+
+    GLuint vao{};
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, position)));
@@ -99,39 +105,11 @@ int main()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                           reinterpret_cast<void*>(offsetof(Vertex, normal)));
 
-    GLuint ebo = 0;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(),
-                 GL_STATIC_DRAW);
-
 
     /*
-     * Depth pipeline
+     * Initialize Light informations
      */
-    auto vertexDepthShader = shader::loadShader(std::string(RESOURCE_PATH) +
-                             "/shaders/vertexDepth.vert");
-    GLuint vds = glCreateShader(GL_VERTEX_SHADER);
-    const GLchar* vertexDepthDataPointer = vertexDepthShader.data();
-    const GLint vertexDepthDataSize = vertexDepthShader.size();
-    glShaderSource(vds, 1, &vertexDepthDataPointer, &vertexDepthDataSize);
-    glCompileShader(vds);
-
-    auto fragmentDepthShader = shader::loadShader(std::string(RESOURCE_PATH) +
-                               "/shaders/fragmentDepth.frag");
-    GLuint fds = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar* fragmentDepthDataPointer = fragmentDepthShader.data();
-    const GLint fragmentDepthDataSize = fragmentDepthShader.size();
-    glShaderSource(fds, 1, &fragmentDepthDataPointer, &fragmentDepthDataSize);
-    glCompileShader(fds);
-
-    GLuint shaderDepthProgramme = glCreateProgram();
-    glAttachShader(shaderDepthProgramme, fds);
-    glAttachShader(shaderDepthProgramme, vds);
-    glLinkProgram(shaderDepthProgramme);
-
-
-    DirectionnalLightInfo light;
+    DirectionnalLightInfo light{};
     light.dir = glm::normalize(glm::vec3(0.0f, -1.0f, -1.0f));
     light.size = 5.0f;
     light.ubo.proj = glm::ortho(-light.size / 2.0f, light.size / 2.0f, -light.size / 2.0f,
@@ -141,20 +119,50 @@ int main()
     light.ubo.projView = light.ubo.proj * light.ubo.view;
 
 
-    GLint projDepthID = glGetUniformLocation(shaderDepthProgramme, "camera.proj");
-    GLint viewDepthID = glGetUniformLocation(shaderDepthProgramme, "camera.view");
+    /*
+     * Depth pipeline
+     */
+    GLuint shaderDepthProgramme{};
+    {
+        auto vertexDepthShader = shader::loadShader(std::string(RESOURCE_PATH) +
+                                 "/shaders/vertexDepth.vert");
+        GLuint vds = glCreateShader(GL_VERTEX_SHADER);
+        const GLchar* vertexDepthDataPointer = vertexDepthShader.data();
+        const GLint vertexDepthDataSize = static_cast<GLint>(vertexDepthShader.size());
+        glShaderSource(vds, 1, &vertexDepthDataPointer, &vertexDepthDataSize);
+        glCompileShader(vds);
+
+        auto fragmentDepthShader = shader::loadShader(std::string(RESOURCE_PATH) +
+                                   "/shaders/fragmentDepth.frag");
+        GLuint fds = glCreateShader(GL_FRAGMENT_SHADER);
+        const GLchar* fragmentDepthDataPointer = fragmentDepthShader.data();
+        const GLint fragmentDepthDataSize = static_cast<GLint>(fragmentDepthShader.size());
+        glShaderSource(fds, 1, &fragmentDepthDataPointer, &fragmentDepthDataSize);
+        glCompileShader(fds);
+
+        shaderDepthProgramme = glCreateProgram();
+        glAttachShader(shaderDepthProgramme, fds);
+        glAttachShader(shaderDepthProgramme, vds);
+        glLinkProgram(shaderDepthProgramme);
+    }
+
+
+
+
+    const GLint projDepthID = glGetUniformLocation(shaderDepthProgramme, "camera.proj");
+    const GLint viewDepthID = glGetUniformLocation(shaderDepthProgramme, "camera.view");
 
 
     glUniformMatrix4fv(projDepthID, 1, false, &light.ubo.proj[0][0]);
     glUniformMatrix4fv(viewDepthID, 1, false, &light.ubo.view[0][0]);
 
     //We generate a framebuffer, and will render the color rendertarget and depth buffer
-    GLuint framebufferDepth;
+    GLuint framebufferDepth{};
     glGenFramebuffers(1, &framebufferDepth);
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferDepth);
 
     // Color
-    GLuint texDepth;
+    GLuint texDepth{};
     glGenTextures(1, &texDepth);
     glBindTexture(GL_TEXTURE_2D, texDepth);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SHADOW_RES, SHADOW_RES, 0, GL_RGBA, GL_FLOAT,
@@ -167,7 +175,7 @@ int main()
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texDepth, 0);
 
     // Depth Attachment
-    GLuint texShadow;
+    GLuint texShadow{};
     glGenTextures(1, &texShadow);
     glBindTexture(GL_TEXTURE_2D, texShadow);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOW_RES, SHADOW_RES, 0, GL_DEPTH_COMPONENT,
@@ -180,9 +188,10 @@ int main()
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texShadow, 0);
 
-    std::array<GLenum, 2> drawBuffers = {GL_COLOR_ATTACHMENT0, GL_NONE};
-
-    glDrawBuffers(3, drawBuffers.data());
+    {
+        const std::array<GLenum, 2> drawBuffers = {GL_COLOR_ATTACHMENT0, GL_NONE};
+        glDrawBuffers(3, drawBuffers.data());
+    }
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         throw std::runtime_error("Failed to create framebuffer from depth attachment!");
@@ -191,39 +200,43 @@ int main()
     /*
      *  Main pipeline
      */
-    auto vertexShader = shader::loadShader(std::string(RESOURCE_PATH) + "/shaders/vertex.vert");
-    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-    const GLchar* vertexDataPointer = vertexShader.data();
-    const GLint vertexDataSize = vertexShader.size();
-    glShaderSource(vs, 1, &vertexDataPointer, &vertexDataSize);
-    glCompileShader(vs);
+    GLuint shaderProgramme{};
+    {
+        auto vertexShader = shader::loadShader(std::string(RESOURCE_PATH) + "/shaders/vertex.vert");
+        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+        const GLchar* vertexDataPointer = vertexShader.data();
+        const GLint vertexDataSize = static_cast<GLint>(vertexShader.size());
+        glShaderSource(vs, 1, &vertexDataPointer, &vertexDataSize);
+        glCompileShader(vs);
 
-    auto fragmentShader = shader::loadShader(std::string(RESOURCE_PATH) + "/shaders/fragment.frag");
-    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar* fragmentDataPointer = fragmentShader.data();
-    const GLint fragmentDataSize = fragmentShader.size();
-    glShaderSource(fs, 1, &fragmentDataPointer, &fragmentDataSize);
-    glCompileShader(fs);
+        auto fragmentShader = shader::loadShader(std::string(RESOURCE_PATH) + "/shaders/fragment.frag");
+        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+        const GLchar* fragmentDataPointer = fragmentShader.data();
+        const GLint fragmentDataSize = static_cast<GLint>(fragmentShader.size());
+        glShaderSource(fs, 1, &fragmentDataPointer, &fragmentDataSize);
+        glCompileShader(fs);
 
-    GLuint shaderProgramme = glCreateProgram();
-    glAttachShader(shaderProgramme, fs);
-    glAttachShader(shaderProgramme, vs);
-    glLinkProgram(shaderProgramme);
+        shaderProgramme = glCreateProgram();
+        glAttachShader(shaderProgramme, fs);
+        glAttachShader(shaderProgramme, vs);
+        glLinkProgram(shaderProgramme);
+    }
+
 
     UniformData ubo;
     actualizeProjection(ubo.proj, winData);
     actualizeView(ubo.view);
 
-    GLint projID = glGetUniformLocation(shaderProgramme, "camera.proj");
-    GLint viewID = glGetUniformLocation(shaderProgramme, "camera.view");
-    GLint lightBiasProjViewID = glGetUniformLocation(shaderProgramme, "light.biasProjView");
-    GLint lightProjViewID = glGetUniformLocation(shaderProgramme, "light.projView");
-    GLint lightViewID = glGetUniformLocation(shaderProgramme, "light.view");
-    GLint lightDirID = glGetUniformLocation(shaderProgramme, "light.dir");
-    GLint texDepthID  = glGetUniformLocation(shaderProgramme, "texDepth");
-    GLint texShadowID  = glGetUniformLocation(shaderProgramme, "texShadow");
+    const GLint projID = glGetUniformLocation(shaderProgramme, "camera.proj");
+    const GLint viewID = glGetUniformLocation(shaderProgramme, "camera.view");
+    const GLint lightBiasProjViewID = glGetUniformLocation(shaderProgramme, "light.biasProjView");
+    const GLint lightProjViewID = glGetUniformLocation(shaderProgramme, "light.projView");
+    const GLint lightViewID = glGetUniformLocation(shaderProgramme, "light.view");
+    const GLint lightDirID = glGetUniformLocation(shaderProgramme, "light.dir");
+    const GLint texDepthID  = glGetUniformLocation(shaderProgramme, "texDepth");
+    const GLint texShadowID  = glGetUniformLocation(shaderProgramme, "texShadow");
 
-    glm::mat4 biasMatrix(
+    constexpr glm::mat4 biasMatrix(
         0.5, 0.0, 0.0, 0.0,
         0.0, 0.5, 0.0, 0.0,
         0.0, 0.0, 0.5, 0.0,
@@ -236,24 +249,21 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glBindVertexArray(vao);
 
     while(!glfwWindowShouldClose(winData.window))
     {
-        // wipe the drawing surface clear
-
         // Depth framebuffer computation
         glBindFramebuffer(GL_FRAMEBUFFER, framebufferDepth);
         glViewport(0, 0, SHADOW_RES, SHADOW_RES);
         glUseProgram(shaderDepthProgramme);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
 
         glUniformMatrix4fv(projDepthID, 1, false, &light.ubo.proj[0][0]);
         glUniformMatrix4fv(viewDepthID, 1, false, &light.ubo.view[0][0]);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
 
 
@@ -263,8 +273,6 @@ int main()
         glUseProgram(shaderProgramme);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
 
         if(winData.resized)
         {
@@ -287,8 +295,6 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texShadow);
         glUniform1i(texShadowID, 1);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mesh.indices.size()), GL_UNSIGNED_INT, nullptr);
 
         // update other events like input handling
@@ -312,15 +318,16 @@ void actualizeProjection(glm::mat4& projMat, const WindowData& data)
 // New camera position and orientation
 void actualizeView(glm::mat4& viewMat)
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
+    static const auto startTime = std::chrono::high_resolution_clock::now();
 
-    auto delay = std::chrono::duration_cast<std::chrono::duration<float>>
-                 (std::chrono::high_resolution_clock::now() -
-                  startTime);
-    float angleRotation = delay.count() * PI / 4.0f;
-    viewMat = glm::lookAt(glm::vec3(2.0 * std::cos(angleRotation), 0.0, 2.0 * std::sin(angleRotation)),
-                          glm::vec3(0.0),
-                          glm::vec3(0.0, 1.0, 0.0));
+    const auto delay = std::chrono::duration_cast<std::chrono::duration<float>>
+                       (std::chrono::high_resolution_clock::now() -
+                        startTime);
+    const float angleRotation = delay.count() * PI / 4.0f;
+    viewMat = glm::lookAt(glm::vec3(2.0f * std::cos(angleRotation), 0.0f,
+                                    2.0f * std::sin(angleRotation)),
+                          glm::vec3(0.0f),
+                          glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 //Handle the window resizing

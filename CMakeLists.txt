@@ -20,6 +20,7 @@ set(glew-cmake_BUILD_MULTI_CONTEXT OFF)
 add_subdirectory(third_party/glew-cmake)
 add_subdirectory(third_party/glfw)
 add_subdirectory(third_party/glm)
+add_definitions(-DTINYOBJLOADER_IMPLEMENTATION)
 add_subdirectory(third_party/tinyobjloader)
 
 
