@@ -1,4 +1,4 @@
-#include "utils/ObjLoader.h"
+#include "ObjLoader.h"
 #include <algorithm>
 #include <unordered_map>
 #include <glm/vec3.hpp>
@@ -74,7 +74,7 @@ bool load(const std::string& path, Mesh& scene)
                 {
 
                     size_t indexTemp;
-                    Vertex newVertex;
+                    Vertex newVertex{};
 
                     if(idx.vertex_index > -1)
                     {

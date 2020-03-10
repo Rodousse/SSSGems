@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include "Mesh.h"
+#include <data/Mesh.h>
 
 namespace loader
 {
