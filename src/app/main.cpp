@@ -236,7 +236,7 @@ int main()
     const GLint texDepthID  = glGetUniformLocation(shaderProgramme, "texDepth");
     const GLint texShadowID  = glGetUniformLocation(shaderProgramme, "texShadow");
 
-    constexpr glm::mat4 biasMatrix(
+    glm::mat4 biasMatrix(
         0.5, 0.0, 0.0, 0.0,
         0.0, 0.5, 0.0, 0.0,
         0.0, 0.0, 0.5, 0.0,
